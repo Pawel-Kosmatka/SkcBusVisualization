@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>SkcBusVisualization</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+        integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" media="screen" href="css/main.css">
+</head>
+
+<body>
+    <div class="row container-fluid match-my-cols">
+        <div id="svgContainer" class="col-sm-10"></div>
+        <div class="col-sm-2 bg-primary center-block text-center">
+            <br>
+            <span>Current Time:</span>
+            <div id="currentTime"></div>
+            <br>
+            <button id="btnSwitchView" class="btn btn-default">sw</button>
+            <br><br>
+            <div class="btn-group ">
+                <button id="btnBackward" type="button" class="btn btn-default">
+                    <span class="glyphicon glyphicon-backward"></span>
+                </button>
+                <button id="btnPause" type="button" class="btn btn-default">
+                    <span class="glyphicon glyphicon-pause"></span>
+                </button>
+                <button id="btnPlay" type="button" class="btn btn-default">
+                    <span class="glyphicon glyphicon-play"></span>
+                </button>
+                <button id="btnForward" type="button" class="btn btn-default">
+                    <span class="glyphicon glyphicon-forward"></span>
+                </button>
+
+            </div>
+        </div>
+    </div>
+
+    <script src="https://ajax.aspnetcdn.com/ajax/jQuery/jquery-2.0.3.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"
+        integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous">
+    </script>
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script src="js/d3Scripts.js"></script>
+    <script src="js/main.js"></script>
+</body>
+
+</html>
