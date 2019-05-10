@@ -165,8 +165,10 @@ var d3Scripts = (function () {
                         }
                     }
                 })
+
+                drawBusWithInitialData();
             }
-        ).on("end", console.log("x"))
+        )
     }
 
     function getHours(s) {
@@ -183,6 +185,10 @@ var d3Scripts = (function () {
             let k = key(item);
             return seen.has(k) ? false : seen.add(k);
         });
+    }
+
+    function drawBusWithInitialData() {
+
     }
 
     function drawBusStops(data) {
