@@ -1,4 +1,7 @@
 var d3Scripts = (function () {
+    let currentDay;
+    let currentHours;
+    let currentMinutes;
     let isInTransition = false;
     let width;
     let height;
@@ -10,13 +13,29 @@ var d3Scripts = (function () {
     const stopsConnectionColor = "#577284";
     const busColor = "#F96714";
 
+    let busLines = [];
     let busLine = {
         lineId: Number,
         lineNo: Number,
-        stopsCount: Number
+        courses: [],
+        stops: []
     }
-    let loadedDataStats = {
-        busLines: [],
+    let course = {
+        id: Number,
+        direction: String,
+        day: String,
+        startTime: {},
+        endTime: {}
+    }
+    let busStop = {
+        id: Number,
+        name: String,
+        arrivals: []
+    }
+    let arrival = {
+        h: Number,
+        m: Number,
+        direction: String
     }
 
     var tooltip = d3.select("body").append("div")
@@ -28,6 +47,12 @@ var d3Scripts = (function () {
         height = h;
         createSVG();
         loadStopsData();
+    }
+
+    function setDate(day, hours, minutes) {
+        currentDay = day;
+        currentHours = hours;
+        currentMinutes = minutes;
     }
 
     function switchStyle() {
@@ -54,35 +79,119 @@ var d3Scripts = (function () {
             (data) => {
                 let id = 1;
                 data.forEach(d => {
-                    let arrLastItem = loadedDataStats.busLines.slice(-1)[0]
+                    let arrLastItem = busLines.slice(-1)[0]
                     if (arrLastItem === undefined) {
-                        loadedDataStats.busLines.push(busLine = {
+                        busLines.push(busLine = {
                             lineId: 1,
                             lineNo: d.lineNo,
-                            stopsCount: 1
+                            courses: [],
+                            stops: [busStop = {
+                                id: d.stopNo,
+                                name: d.stopName,
+                                arrivals: []
+                            }]
                         })
                     } else if (arrLastItem.lineNo == d.lineNo) {
-                        arrLastItem.stopsCount += 1;
+                        arrLastItem.stops.push(busStop = {
+                            id: d.stopNo,
+                            name: d.stopName,
+                            arrivals: []
+                        })
                     } else {
-                        loadedDataStats.busLines.push(busLine = {
+                        busLines.push(busLine = {
                             lineId: ++id,
                             lineNo: d.lineNo,
-                            stopsCount: 1
+                            courses: [],
+                            stops: [busStop = {
+                                id: d.stopNo,
+                                name: d.stopName,
+                                arrivals: []
+                            }]
                         })
                     }
                 })
-                drawBusStops(data);
+                let uniqueStops = distinctBy(data, d => d.stopName);
+                drawBusStops(uniqueStops);
             }
         )
+        d3.csv("csv/buses.csv").then(
+            (data) => {
+                data.forEach(d => {
+                    let busLine = busLines.find(l => l.lineNo === d.lineNo)
+                    if (busLine !== undefined) {
+                        sCourse = busLine.courses.find(c => c.id === d.courseId);
+                        if (sCourse === undefined) {
+                            busLine.courses.push(course = {
+                                id: d.courseId,
+                                direction: d.direction,
+                                day: d.day,
+                                startTime: {
+                                    ["h"]: getHours(d.time),
+                                    ["m"]: getMinutes(d.time)
+                                },
+                                endTime: {
+                                    ["h"]: getHours(d.time),
+                                    ["m"]: getMinutes(d.time)
+                                }
+                            })
+                        } else {
+                            if (sCourse.startTime.h > getHours(d.time)) {
+                                sCourse.startTime.h = getHours(d.time)
+                                sCourse.startTime.m = getMinutes(d.time)
+                            }
+                            if (sCourse.startTime.h === getHours(d.time)) {
+                                if (sCourse.startTime.m > getMinutes(d.time)) {
+                                    sCourse.startTime.m = getMinutes(d.time)
+                                }
+                            }
+                            if (sCourse.endTime.h < getHours(d.time)) {
+                                sCourse.endTime.h = getHours(d.time)
+                                sCourse.endTime.m = getMinutes(d.time)
+                            }
+                            if (sCourse.endTime.h === getHours(d.time)) {
+                                if (sCourse.endTime.m < getMinutes(d.time)) {
+                                    sCourse.endTime.m = getMinutes(d.time)
+                                }
+                            }
+                        }
+
+                        let stop = busLine.stops.find(s => s.name == d.stopName);
+                        if (stop !== undefined) {
+                            stop.arrivals.push(arrival = {
+                                direction: d.direction,
+                                h: getHours(d.time),
+                                m: getMinutes(d.time)
+                            })
+                        }
+                    }
+                })
+            }
+        ).on("end", console.log("x"))
+    }
+
+    function getHours(s) {
+        return parseInt(s.substring(0, 2));
+    }
+
+    function getMinutes(s) {
+        return parseInt(s.substring(3));
+    }
+
+    function distinctBy(data, key) {
+        let seen = new Set();
+        return data.filter(item => {
+            let k = key(item);
+            return seen.has(k) ? false : seen.add(k);
+        });
     }
 
     function drawBusStops(data) {
         for (let i = 0; i < data.length; i++) {
             if (i < data.length - 1 && data[i].lineNo === data[i + 1].lineNo) {
+                drawLinesWithInitialData(data[i], data[i + 1], stopsConnectionColor);
                 drawStopWithInitialData(data[i], stopsColor);
-                drawLinesWithInitialData(data[i], data[i + 1], stopsColor);
             } else {
-                drawStopWithInitialData(data[i], stopsColor);
+                drawStopWithInitialData(data[i], stopsConnectionColor);
             }
         }
         positionStops("map");
@@ -135,7 +244,7 @@ var d3Scripts = (function () {
                     if (type === "map") {
                         return getScale(type, "y", bStop.attr("data-latitude"));
                     } else {
-                        let id = loadedDataStats.busLines.find(l =>
+                        let id = busLines.find(l =>
                             l.lineNo == bStop.attr("data-line-number")
                         ).lineId
                         return getScale(type, "y", id)
@@ -192,7 +301,7 @@ var d3Scripts = (function () {
                     if (type == "map")
                         return getScale(type, "y", line.attr("data-start-latitude"));
                     else {
-                        let id = loadedDataStats.busLines.find(l =>
+                        let id = busLines.find(l =>
                             l.lineNo == line.attr("data-line-number")
                         ).lineId
                         return getScale(type, "y", id);
@@ -203,7 +312,7 @@ var d3Scripts = (function () {
                     if (type == "map")
                         return getScale(type, "y", line.attr("data-stop-latitude"));
                     else {
-                        let id = loadedDataStats.busLines.find(l =>
+                        let id = busLines.find(l =>
                             l.lineNo == line.attr("data-line-number")
                         ).lineId
                         return getScale(type, "y", id);
@@ -221,13 +330,13 @@ var d3Scripts = (function () {
                     .domain([20.088672, 20.212606])
                     .range([0, width]);
             } else {
-                let c = 0;
-                loadedDataStats.busLines.forEach(l => {
-                    if (l.stopsCount > c)
-                        c = l.stopsCount;
+                let ml = 0;
+                busLines.forEach(l => {
+                    if (l.stops.length > ml)
+                        ml = l.stops.length;
                 });
                 scale = d3.scaleLinear()
-                    .domain([0, c + 1])
+                    .domain([0, ml + 1])
                     .range([0, width]);
             }
         } else if (axis === "y") {
@@ -237,7 +346,7 @@ var d3Scripts = (function () {
                     .range([height, 0]);
             } else {
                 scale = d3.scaleLinear()
-                    .domain([0, loadedDataStats.busLines.length + 1])
+                    .domain([0, busLines.length + 1])
                     .range([height, 0]);
             }
         }
@@ -247,6 +356,7 @@ var d3Scripts = (function () {
 
     return {
         init: init,
-        switchViewStyle: switchStyle
+        switchViewStyle: switchStyle,
+        setDate: setDate
     }
 })();
