@@ -33,6 +33,7 @@ var d3Scripts = (function () {
         arrivals: []
     }
     let arrival = {
+        courseId: Number,
         h: Number,
         m: Number,
         direction: String
@@ -53,6 +54,7 @@ var d3Scripts = (function () {
         currentDay = day;
         currentHours = hours;
         currentMinutes = minutes;
+
     }
 
     function switchStyle() {
@@ -158,6 +160,7 @@ var d3Scripts = (function () {
                         let stop = busLine.stops.find(s => s.name == d.stopName);
                         if (stop !== undefined) {
                             stop.arrivals.push(arrival = {
+                                courseId: d.courseId,
                                 direction: d.direction,
                                 h: getHours(d.time),
                                 m: getMinutes(d.time)
@@ -165,8 +168,6 @@ var d3Scripts = (function () {
                         }
                     }
                 })
-
-                drawBusWithInitialData();
             }
         )
     }
@@ -188,7 +189,19 @@ var d3Scripts = (function () {
     }
 
     function drawBusWithInitialData() {
+        let activeCourses = [];
+        activeCourses = busLines[0].courses.filter(c => (c.startTime.h >= currentHours) && (c.endTime.h < currentHours));
+        activeCourses.forEach(
+            svg.append("circle")
+            .attr("cx", () => {
+                bStopId = d3.select()
+                return d3.select("[data-busStop-id = '1']").attr("cx")
 
+            })
+            .attr("cy", 115)
+            .attr("r", 5)
+            .attr("fill", busColor)
+        )
     }
 
     function drawBusStops(data) {
@@ -207,7 +220,7 @@ var d3Scripts = (function () {
         svg.append("circle")
             .attr("data-type", "busStop")
             .attr("data-line-number", data.lineNo)
-            .attr("data-id", data.stopNo)
+            .attr("data-busStop-id", data.stopNo)
             .attr("data-longitude", data.longitude)
             .attr("data-latitude", data.latitude)
             .attr("cx", 0)
@@ -238,25 +251,27 @@ var d3Scripts = (function () {
                 .transition()
                 .duration(stopsTransitionTime)
                 .attr("cx", () => {
-                    let bStop = $(this);
                     if (type === "map") {
-                        return getScale(type, "x", bStop.attr("data-longitude"));
+                        return getScale(type, "x", d3.select(this).attr("data-longitude"));
                     } else {
-                        return getScale(type, "x", bStop.attr("data-id"));
+                        return getScale(type, "x", d3.select(this).attr("data-busStop-id"));
                     }
                 })
                 .attr("cy", () => {
                     bStop = $(this);
                     if (type === "map") {
-                        return getScale(type, "y", bStop.attr("data-latitude"));
+                        return getScale(type, "y", d3.select(this).attr("data-latitude"));
                     } else {
                         let id = busLines.find(l =>
-                            l.lineNo == bStop.attr("data-line-number")
+                            l.lineNo == d3.select(this).attr("data-line-number")
                         ).lineId
                         return getScale(type, "y", id)
                     }
                 })
-                .on("end", () => isInTransition = false);
+                .on("end", () => {
+                    isInTransition = false
+                    drawBusWithInitialData();
+                });
         })
         positionLines(type);
     }
@@ -287,39 +302,35 @@ var d3Scripts = (function () {
                 .transition()
                 .duration(stopsTransitionTime)
                 .attr("x1", () => {
-                    let line = $(this);
                     if (type == "map") {
-                        return getScale(type, "x", line.attr("data-start-longitude"));
+                        return getScale(type, "x", d3.select(this).attr("data-start-longitude"));
                     } else {
-                        return getScale(type, "x", line.attr("data-id"));
+                        return getScale(type, "x", d3.select(this).attr("data-id"));
                     }
                 })
                 .attr("x2", () => {
-                    line = $(this);
                     if (type == "map") {
-                        return getScale(type, "x", line.attr("data-stop-longitude"));
+                        return getScale(type, "x", d3.select(this).attr("data-stop-longitude"));
                     } else {
-                        return getScale(type, "x", parseInt(line.attr("data-id")) + 1);
+                        return getScale(type, "x", parseInt(d3.select(this).attr("data-id")) + 1);
                     }
                 })
                 .attr("y1", () => {
-                    line = $(this);
                     if (type == "map")
-                        return getScale(type, "y", line.attr("data-start-latitude"));
+                        return getScale(type, "y", d3.select(this).attr("data-start-latitude"));
                     else {
                         let id = busLines.find(l =>
-                            l.lineNo == line.attr("data-line-number")
+                            l.lineNo == d3.select(this).attr("data-line-number")
                         ).lineId
                         return getScale(type, "y", id);
                     }
                 })
                 .attr("y2", () => {
-                    line = $(this);
                     if (type == "map")
-                        return getScale(type, "y", line.attr("data-stop-latitude"));
+                        return getScale(type, "y", d3.select(this).attr("data-stop-latitude"));
                     else {
                         let id = busLines.find(l =>
-                            l.lineNo == line.attr("data-line-number")
+                            l.lineNo == d3.select(this).attr("data-line-number")
                         ).lineId
                         return getScale(type, "y", id);
                     }
