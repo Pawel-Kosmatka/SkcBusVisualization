@@ -9,6 +9,7 @@ var d3Scripts = (function () {
     let svg;
     let margin = 30;
     let isInitialStyle = true;
+    let timeMultiply = 1;
     const stopsTransitionTime = 5000;
     const stopsColor = "#2A4B7C";
     const stopsConnectionColor = "#577284";
@@ -51,11 +52,12 @@ var d3Scripts = (function () {
         loadStopsData();
     }
 
-    function setDate(day, hours, minutes, seconds) {
+    function setDate(day, hours, minutes, seconds, multiply) {
         currentDay = day;
         currentHour = hours;
         currentMinutes = minutes;
         currentSeconds = seconds;
+        timeMultiply = multiply;
         getBusesPositions();
     }
 

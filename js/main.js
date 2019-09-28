@@ -5,19 +5,40 @@
         let windowWidth = parseInt(svgContainer_style.getPropertyValue('width'));
         let windowHeight = window.innerHeight;
         let d = new Date();
+        let interval = 1000;
+        let intervalId;
 
-        d3Scripts.setDate(d.getDay(), d.getHours() - 7, d.getMinutes() - 20, d.getSeconds());
+        d3Scripts.setDate(d.getDay(), d.getHours() - 7, d.getMinutes() - 20, d.getSeconds(), interval);
+        // console.log(d)
+        // d.setTime(d.getTime() + 5000);
+        // console.log(d);
         d3Scripts.init(windowWidth, windowHeight);
 
-        setInterval(() => {
-            d = new Date();
-            currentTimer.innerHTML = d.toLocaleTimeString();
-            d3Scripts.setDate(d.getDay(), d.getHours() - 7, d.getMinutes() - 20, d.getSeconds())
-        }, 1000);
+        startInterval(interval);
 
+        function startInterval(_interval) {
+            intervalId = setInterval(() => {
+                d.setTime(d.getTime() + 1000);
+                console.log(_interval);
+                currentTimer.innerHTML = d.toLocaleTimeString();
+                d3Scripts.setDate(d.getDay(), d.getHours() - 7, d.getMinutes() - 20, d.getSeconds(), interval)
+            }, _interval);
+        }
 
         $("#btnSwitchView").click(function (e) {
             d3Scripts.switchViewStyle();
+        });
+
+        $("#btnForward").click(function (e) {
+            clearInterval(intervalId);
+            interval = 200;
+            startInterval(interval);
+        });
+
+        $("#btnPlay").click(function (e) {
+            clearInterval(intervalId);
+            interval = 1000;
+            startInterval(interval);
         });
 
     });
