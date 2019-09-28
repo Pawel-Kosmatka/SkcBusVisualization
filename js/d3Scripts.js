@@ -197,8 +197,13 @@ var d3Scripts = (function () {
             activeCourses = bl.courses.filter(c => ((isHigherThanCurrentTime(c.startTime.h, c.startTime.m) == false || isEqualToCurrentTime(c.startTime.h, c.startTime.m) == true) && (isHigherThanCurrentTime(c.endTime.h, c.endTime.m) == true || isEqualToCurrentTime(c.endTime.h, c.endTime.m) == true)));
             activeCourses.forEach(c => {
                 let busPosition = c.arrivals.find(s => isEqualToCurrentTime(s.h, s.m) == true);
+                let lastStop = c.arrivals.slice(-1)[0];
                 if (busPosition != undefined) {
-                    drawBus(d3.select("[data-busStop-id = '" + busPosition.id + "']").attr("cx"), d3.select("[data-busStop-id = '" + busPosition.id + "']").attr("cy"), bl.lineId, c.id)
+                    if (lastStop == busPosition) {
+                        hideBus(bl.lineId, c.id);
+                    } else {
+                        drawBus(d3.select("[data-busStop-id = '" + busPosition.id + "']").attr("cx"), d3.select("[data-busStop-id = '" + busPosition.id + "']").attr("cy"), bl.lineId, c.id)
+                    }
                 } else {
                     let nextStop = c.arrivals.find(s => isHigherThanCurrentTime(s.h, s.m) == true);
                     let prevStop = c.arrivals.find(s => s.id == nextStop.id - 1);
@@ -216,12 +221,18 @@ var d3Scripts = (function () {
         })
     }
 
+    function hideBus(lineId, courseId) {
+        let id = 11 * parseInt(lineId) + 31 * parseInt(courseId);
+        d3.select("[data-bus-id = '" + id + "']").remove()
+    }
+
     function drawBus(cx, cy, lineId, courseId) {
         if (isInTransition == false) {
             let id = 11 * parseInt(lineId) + 31 * parseInt(courseId);
 
             let bus = d3.select("[data-bus-id = '" + id + "']");
             if (bus._groups[0][0] == null) {
+                bLine = busLines.find(l => l.lineId == lineId);
                 svg.append("circle")
                     .attr("data-type", "bus")
                     .attr("data-bus-id", id)
@@ -229,6 +240,19 @@ var d3Scripts = (function () {
                     .attr("cy", cy)
                     .attr("r", 5)
                     .attr("fill", busColor)
+                    .on("mouseover", () => {
+                        tooltip.transition()
+                            .duration(200)
+                            .style("opacity", .9);
+                        tooltip.html("Line No. " + bLine.lineNo + "<br/>")
+                            .style("left", (d3.event.pageX) + "px")
+                            .style("top", (d3.event.pageY - 28) + "px");
+                    })
+                    .on("mouseout", () => {
+                        tooltip.transition()
+                            .duration(500)
+                            .style("opacity", 0);
+                    });
             } else {
                 d3.select("[data-bus-id = '" + id + "']").transition()
                     .duration(interval)
@@ -305,7 +329,6 @@ var d3Scripts = (function () {
                 })
                 .on("end", () => {
                     isInTransition = false
-                    // getBusesPositions();
                 });
         })
         positionLines(type);

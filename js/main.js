@@ -9,9 +9,6 @@
         let intervalId;
 
         d3Scripts.setDate(d.getDay(), d.getHours() - 7, d.getMinutes() - 20, d.getSeconds(), interval);
-        // console.log(d)
-        // d.setTime(d.getTime() + 5000);
-        // console.log(d);
         d3Scripts.init(windowWidth, windowHeight);
 
         startInterval(interval);
@@ -20,7 +17,7 @@
             intervalId = setInterval(() => {
                 d.setTime(d.getTime() + 1000);
                 currentTimer.innerHTML = d.toLocaleTimeString();
-                d3Scripts.setDate(d.getDay(), d.getHours() - 10, d.getMinutes() - 20, d.getSeconds(), interval)
+                d3Scripts.setDate(d.getDay(), d.getHours() - 11, d.getMinutes() - 10, d.getSeconds(), interval)
             }, _interval);
         }
 
