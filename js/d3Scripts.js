@@ -1,7 +1,8 @@
 var d3Scripts = (function () {
     let currentDay;
-    let currentHours;
+    let currentHour;
     let currentMinutes;
+    let currentSeconds;
     let isInTransition = false;
     let width;
     let height;
@@ -25,18 +26,18 @@ var d3Scripts = (function () {
         direction: String,
         day: String,
         startTime: {},
-        endTime: {}
+        endTime: {},
+        arrivals: []
     }
     let busStop = {
         id: Number,
         name: String,
-        arrivals: []
     }
     let arrival = {
-        courseId: Number,
+        id: Number,
+        busStopName: String,
         h: Number,
-        m: Number,
-        direction: String
+        m: Number
     }
 
     var tooltip = d3.select("body").append("div")
@@ -50,11 +51,12 @@ var d3Scripts = (function () {
         loadStopsData();
     }
 
-    function setDate(day, hours, minutes) {
+    function setDate(day, hours, minutes, seconds) {
         currentDay = day;
-        currentHours = hours;
+        currentHour = hours;
         currentMinutes = minutes;
-
+        currentSeconds = seconds;
+        getBusesPositions();
     }
 
     function switchStyle() {
@@ -89,15 +91,13 @@ var d3Scripts = (function () {
                             courses: [],
                             stops: [busStop = {
                                 id: d.stopNo,
-                                name: d.stopName,
-                                arrivals: []
+                                name: d.stopName
                             }]
                         })
                     } else if (arrLastItem.lineNo == d.lineNo) {
                         arrLastItem.stops.push(busStop = {
                             id: d.stopNo,
-                            name: d.stopName,
-                            arrivals: []
+                            name: d.stopName
                         })
                     } else {
                         busLines.push(busLine = {
@@ -106,8 +106,7 @@ var d3Scripts = (function () {
                             courses: [],
                             stops: [busStop = {
                                 id: d.stopNo,
-                                name: d.stopName,
-                                arrivals: []
+                                name: d.stopName
                             }]
                         })
                     }
@@ -134,9 +133,21 @@ var d3Scripts = (function () {
                                 endTime: {
                                     ["h"]: getHours(d.time),
                                     ["m"]: getMinutes(d.time)
-                                }
+                                },
+                                arrivals: [arrival = {
+                                    id: busLine.stops.find(s => s.name == d.stopName).id,
+                                    busStopName: d.stopName,
+                                    h: getHours(d.time),
+                                    m: getMinutes(d.time)
+                                }]
                             })
                         } else {
+                            sCourse.arrivals.push(arrival = {
+                                id: busLine.stops.find(s => s.name == d.stopName).id,
+                                busStopName: d.stopName,
+                                h: getHours(d.time),
+                                m: getMinutes(d.time)
+                            })
                             if (sCourse.startTime.h > getHours(d.time)) {
                                 sCourse.startTime.h = getHours(d.time)
                                 sCourse.startTime.m = getMinutes(d.time)
@@ -155,16 +166,6 @@ var d3Scripts = (function () {
                                     sCourse.endTime.m = getMinutes(d.time)
                                 }
                             }
-                        }
-
-                        let stop = busLine.stops.find(s => s.name == d.stopName);
-                        if (stop !== undefined) {
-                            stop.arrivals.push(arrival = {
-                                courseId: d.courseId,
-                                direction: d.direction,
-                                h: getHours(d.time),
-                                m: getMinutes(d.time)
-                            })
                         }
                     }
                 })
@@ -188,20 +189,52 @@ var d3Scripts = (function () {
         });
     }
 
-    function drawBusWithInitialData() {
+    function getBusesPositions() {
         let activeCourses = [];
-        activeCourses = busLines[0].courses.filter(c => (c.startTime.h >= currentHours) && (c.endTime.h < currentHours));
-        activeCourses.forEach(
-            svg.append("circle")
-            .attr("cx", () => {
-                bStopId = d3.select()
-                return d3.select("[data-busStop-id = '1']").attr("cx")
-
+        busLines.forEach(bl => {
+            activeCourses = bl.courses.filter(c => ((isHigherThanCurrentTime(c.startTime.h, c.startTime.m) == false || isEqualToCurrentTime(c.startTime.h, c.startTime.m) == true) && (isHigherThanCurrentTime(c.endTime.h, c.endTime.m) == true || isEqualToCurrentTime(c.endTime.h, c.endTime.m) == true)));
+            activeCourses.forEach(c => {
+                let busPosition = c.arrivals.find(s => isEqualToCurrentTime(s.h, s.m) == true);
+                if (busPosition != undefined) {
+                    drawBus(d3.select("[data-busStop-id = '" + busPosition.id + "']").attr("cx"), d3.select("[data-busStop-id = '" + busPosition.id + "']").attr("cy"), bl.lineId, c.id)
+                } else {
+                    let nextStop = c.arrivals.find(s => isHigherThanCurrentTime(s.h, s.m) == true);
+                    let prevStop = c.arrivals.find(s => s.id == nextStop.id - 1);
+                    let prevStopCx = parseFloat(d3.select("[data-busStop-id = '" + prevStop.id + "']").attr("cx"));
+                    let prevStopCy = parseFloat(d3.select("[data-busStop-id = '" + prevStop.id + "']").attr("cy"));
+                    let nextStopCx = parseFloat(d3.select("[data-busStop-id = '" + nextStop.id + "']").attr("cx"));
+                    let nextStopCy = parseFloat(d3.select("[data-busStop-id = '" + nextStop.id + "']").attr("cy"));
+                    let timeDif = (nextStop.h - prevStop.h) * 60 + nextStop.m - prevStop.m;
+                    let timeFromPrevStop = (currentHour - prevStop.h) * 60 + (currentMinutes - prevStop.m) + currentSeconds / 60;
+                    let busX = (timeFromPrevStop * (nextStopCx - prevStopCx) / timeDif) + prevStopCx;
+                    let busY = (timeFromPrevStop * (nextStopCy - prevStopCy) / timeDif) + prevStopCy;
+                    drawBus(busX, busY, bl.lineId, c.id);
+                }
             })
-            .attr("cy", 115)
-            .attr("r", 5)
-            .attr("fill", busColor)
-        )
+        })
+    }
+
+    function drawBus(cx, cy, lineId, courseId) {
+        if (isInTransition == false) {
+            let id = 11 * parseInt(lineId) + 31 * parseInt(courseId);
+
+            let bus = d3.select("[data-bus-id = '" + id + "']");
+            if (bus._groups[0][0] == null) {
+                svg.append("circle")
+                    .attr("data-type", "bus")
+                    .attr("data-bus-id", id)
+                    .attr("cx", cx)
+                    .attr("cy", cy)
+                    .attr("r", 5)
+                    .attr("fill", busColor)
+            } else {
+                d3.select("[data-bus-id = '" + id + "']").transition()
+                    .duration(1000)
+                    .attr("cx", cx)
+                    .attr("cy", cy)
+            }
+        }
+
     }
 
     function drawBusStops(data) {
@@ -270,7 +303,7 @@ var d3Scripts = (function () {
                 })
                 .on("end", () => {
                     isInTransition = false
-                    drawBusWithInitialData();
+                    // getBusesPositions();
                 });
         })
         positionLines(type);
@@ -368,6 +401,40 @@ var d3Scripts = (function () {
             }
         }
         return scale(d);
+    }
+
+    function isHigherThanCurrentTime(h, m) {
+        if (h > currentHour) {
+            return true;
+        }
+        if (h == currentHour && m > currentMinutes) {
+            return true;
+        }
+        return false;
+    }
+
+    function isEqualToCurrentTime(h, m) {
+        if (h == currentHour && m == currentMinutes && currentSeconds == 0) {
+            return true;
+        }
+        return false;
+    }
+
+    function ifFirstTimeIsHigher(fh, fm, sh, sm) {
+        if (fh > sh) {
+            return true;
+        }
+        if (fh == sh && fm > sm) {
+            return true;
+        }
+        return false;
+    }
+
+    function ifTimeIsEqual(fh, fm, sh, sm) {
+        if (fh == sh && fm == sm) {
+            return true;
+        }
+        return false;
     }
 
 
