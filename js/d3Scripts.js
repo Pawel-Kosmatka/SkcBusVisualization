@@ -9,7 +9,7 @@ var d3Scripts = (function () {
     let svg;
     let margin = 30;
     let isInitialStyle = true;
-    let timeMultiply = 1;
+    let interval = 1;
     const stopsTransitionTime = 5000;
     const stopsColor = "#2A4B7C";
     const stopsConnectionColor = "#577284";
@@ -57,7 +57,7 @@ var d3Scripts = (function () {
         currentHour = hours;
         currentMinutes = minutes;
         currentSeconds = seconds;
-        timeMultiply = multiply;
+        interval = multiply;
         getBusesPositions();
     }
 
@@ -231,7 +231,7 @@ var d3Scripts = (function () {
                     .attr("fill", busColor)
             } else {
                 d3.select("[data-bus-id = '" + id + "']").transition()
-                    .duration(1000)
+                    .duration(interval)
                     .attr("cx", cx)
                     .attr("cy", cy)
             }

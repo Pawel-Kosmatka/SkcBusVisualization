@@ -19,14 +19,17 @@
         function startInterval(_interval) {
             intervalId = setInterval(() => {
                 d.setTime(d.getTime() + 1000);
-                console.log(_interval);
                 currentTimer.innerHTML = d.toLocaleTimeString();
-                d3Scripts.setDate(d.getDay(), d.getHours() - 7, d.getMinutes() - 20, d.getSeconds(), interval)
+                d3Scripts.setDate(d.getDay(), d.getHours() - 10, d.getMinutes() - 20, d.getSeconds(), interval)
             }, _interval);
         }
 
         $("#btnSwitchView").click(function (e) {
             d3Scripts.switchViewStyle();
+        });
+
+        $("#btnResetTime").click(function (e) {
+            d = new Date();
         });
 
         $("#btnForward").click(function (e) {
