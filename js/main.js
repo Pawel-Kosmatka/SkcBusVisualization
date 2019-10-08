@@ -8,7 +8,7 @@
         let interval = 1000;
         let intervalId;
 
-        d3Scripts.setDate(d.getDay(), d.getHours() - 7, d.getMinutes() - 20, d.getSeconds(), interval);
+        d3Scripts.setDate(d.getDay(), d.getHours() - 7, d.getMinutes() - 25, d.getSeconds(), interval);
         d3Scripts.init(windowWidth, windowHeight);
 
         startInterval(interval);
@@ -17,7 +17,7 @@
             intervalId = setInterval(() => {
                 d.setTime(d.getTime() + 1000);
                 currentTimer.innerHTML = d.toLocaleTimeString();
-                d3Scripts.setDate(d.getDay(), d.getHours() - 11, d.getMinutes() - 10, d.getSeconds(), interval)
+                d3Scripts.setDate(d.getDay(), d.getHours() - 11, d.getMinutes() - 5, d.getSeconds(), interval)
             }, _interval);
         }
 
@@ -27,6 +27,8 @@
 
         $("#btnResetTime").click(function (e) {
             d = new Date();
+            d3Scripts.setDate(d.getDay(), d.getHours() - 11, d.getMinutes() - 5, d.getSeconds(), interval)
+            d3Scripts.resetInactiveBusses();
         });
 
         $("#btnForward").click(function (e) {
@@ -41,7 +43,10 @@
             startInterval(interval);
         });
 
+        $("#timeSpeed").on("input", function (e) {
+            clearInterval(intervalId);
+            interval = 1000 / this.value;
+            startInterval(interval);
+        })
     });
-
-
 })()

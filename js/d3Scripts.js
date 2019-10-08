@@ -226,6 +226,23 @@ var d3Scripts = (function () {
         d3.select("[data-bus-id = '" + id + "']").remove()
     }
 
+    function resetInactiveBusses() {
+        let buses = svg.selectAll("[data-type = 'bus']");
+        let activeCourses = [];
+        busLines.forEach(bl => {
+            activeCourses = bl.courses.filter(c => ((isHigherThanCurrentTime(c.startTime.h, c.startTime.m) == false || isEqualToCurrentTime(c.startTime.h, c.startTime.m) == true) && (isHigherThanCurrentTime(c.endTime.h, c.endTime.m) == true || isEqualToCurrentTime(c.endTime.h, c.endTime.m) == true)));
+            console.log(activeCourses);
+            buses.each(function () {
+                let courseId = d3.select(this).attr("data-course-id");
+                console.log(bl.courses.find(c => c.id == courseId) != undefined)
+                console.log(activeCourses.find(c => c.id == courseId) == undefined)
+                if ((bl.courses.find(c => c.id == courseId) != undefined) && activeCourses.find(c => c.id == courseId) == undefined) {
+                    d3.select(this).remove()
+                }
+            })
+        })
+    }
+
     function drawBus(cx, cy, lineId, courseId) {
         if (isInTransition == false) {
             let id = 11 * parseInt(lineId) + 31 * parseInt(courseId);
@@ -236,6 +253,7 @@ var d3Scripts = (function () {
                 svg.append("circle")
                     .attr("data-type", "bus")
                     .attr("data-bus-id", id)
+                    .attr("data-course-id", courseId)
                     .attr("cx", cx)
                     .attr("cy", cy)
                     .attr("r", 5)
@@ -260,7 +278,6 @@ var d3Scripts = (function () {
                     .attr("cy", cy)
             }
         }
-
     }
 
     function drawBusStops(data) {
@@ -466,6 +483,7 @@ var d3Scripts = (function () {
     return {
         init: init,
         switchViewStyle: switchStyle,
-        setDate: setDate
+        setDate: setDate,
+        resetInactiveBusses: resetInactiveBusses
     }
 })();
