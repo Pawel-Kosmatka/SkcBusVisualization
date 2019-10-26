@@ -53,7 +53,13 @@ var d3Scripts = (function () {
     }
 
     function setDate(day, hours, minutes, seconds, multiply) {
-        currentDay = day;
+        if (day == 0) {
+            currentDay = "sunday";
+        } else if (day = 6) {
+            currentDay = "saturday"
+        } else {
+            currentDay = "week";
+        }
         currentHour = hours;
         currentMinutes = minutes;
         currentSeconds = seconds;
@@ -113,8 +119,8 @@ var d3Scripts = (function () {
                         })
                     }
                 })
-                let uniqueStops = distinctBy(data, d => d.stopName);
-                drawBusStops(uniqueStops);
+                //let uniqueStops = distinctBy(data, d => d.stopName);
+                drawBusStops(data);
             }
         )
         d3.csv("csv/buses.csv").then(
@@ -194,7 +200,7 @@ var d3Scripts = (function () {
     function getBusesPositions() {
         let activeCourses = [];
         busLines.forEach(bl => {
-            activeCourses = bl.courses.filter(c => ((isHigherThanCurrentTime(c.startTime.h, c.startTime.m) == false || isEqualToCurrentTime(c.startTime.h, c.startTime.m) == true) && (isHigherThanCurrentTime(c.endTime.h, c.endTime.m) == true || isEqualToCurrentTime(c.endTime.h, c.endTime.m) == true)));
+            activeCourses = bl.courses.filter(c => ((isHigherThanCurrentTime(c.startTime.h, c.startTime.m) == false || isEqualToCurrentTime(c.startTime.h, c.startTime.m) == true) && (isHigherThanCurrentTime(c.endTime.h, c.endTime.m) == true || isEqualToCurrentTime(c.endTime.h, c.endTime.m) == true) && (c.day == currentDay)));
             activeCourses.forEach(c => {
                 let busPosition = c.arrivals.find(s => isEqualToCurrentTime(s.h, s.m) == true);
                 let lastStop = c.arrivals.slice(-1)[0];
@@ -434,7 +440,7 @@ var d3Scripts = (function () {
         } else if (axis === "y") {
             if (type === "map") {
                 scale = d3.scaleLinear()
-                    .domain([51.929143, 51.984604])
+                    .domain([51.925143, 51.986604])
                     .range([height, 0]);
             } else {
                 scale = d3.scaleLinear()
